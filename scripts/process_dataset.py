@@ -1,6 +1,7 @@
 import os
 import random
 import cv2
+import csv
 import numpy as np
 import pickle 
 
@@ -23,18 +24,28 @@ def augmentation(group_imgs, group_filenames,target_number):
     perc = factor - 1.0
 
     if perc <= 1.0:
-        
-
+        pass
     else:
         pass
 
 
 
 if __name__ == "__main__":
-    path = "dataset/utkface"
-    dataset_filenames = os.listdir(path)
+    path_dataset = "dataset"
+    path_images = os.path.join(path_dataset,"utkface")
+    path_train = os.path.join(path_dataset,"train")
+    path_labels = os.path.join(path_dataset,"labels.csv")
+
+    dataset_filenames = os.listdir(path_images)
     age_counts = count_age_groups(dataset_filenames)
-    path_train = "dataset/train"  
+
+    label_dict = {}
+
+    with open(path_labels,"r") as csvfile:
+        reader = csv.reader(csvfile, delimiter = ",")
+        for row in reader:
+            label_dict[row[0]] = tuple(row[1:])
+
 
     try:
         os.mkdir(path_train)
@@ -51,7 +62,7 @@ if __name__ == "__main__":
         group_filenames = [x for x in dataset_filenames if int(x.split("_")[0]) == age]
         group_imgs = []
         for filename in group_filenames:
-            img = cv2.imread(os.path.join(path,filename))
+            img = cv2.imread(os.path.join(path_images,filename))
             img = preprocessing(img)
             group_imgs.append(img)
 
