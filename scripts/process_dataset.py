@@ -1,5 +1,7 @@
 import os
+import random
 import cv2
+import numpy as np
 
 def count_age_groups(filenames):
     age_counts = {}
@@ -15,32 +17,42 @@ def count_age_groups(filenames):
 def preprocessing(img):
     return img
 
+def augmentation(group_imgs, target_number):
+    pass
+
 if __name__ == "__main__":
-    path = "../dataset/utkface"
+    path = "dataset/utkface"
     dataset_filenames = os.listdir(path)
     age_counts = count_age_groups(dataset_filenames)
+    path_train = "dataset/train"  
 
-    #print(dataset_filenames)
-
+    try:
+        os.mkdir(path_train)
+    except OSError as e:
+        pass
     n_per_age = 250
     max_augmentation = 5
     
     dataset = []
-    f = 0
-    #cnt = 0
     for count in age_counts:
         age,n = count
-        #group_filenames = dataset_filenames[cnt:cnt + n]
-        #cnt += n
+
         group_filenames = [x for x in dataset_filenames if int(x.split("_")[0]) == age]
         group_imgs = []
+        new_group_imgs = []
         for filename in group_filenames:
             img = cv2.imread(os.path.join(path,filename))
             img = preprocessing(img)
             group_imgs.append(img)
-        break
-    cv2.waitKey(0)
 
+        if n < n_per_age:
+            aug_imgs,aug_filenames = augmentation(group_imgs,n_per_age)
+            for i in range(len(group_imgs)):
+                cv2.imwrite(os.path.join(path_train,aug_filenames[i]), aug_imgs[i])
+        elif n > n_per_age:
+            random_indexes = random.sample(range(0,n),k=n_per_age)
+            for i in random_indexes:
+                cv2.imwrite(os.path.join(path_train, group_filenames[i]), group_imgs[i])
 
 
     
