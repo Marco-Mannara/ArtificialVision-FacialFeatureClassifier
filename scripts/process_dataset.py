@@ -2,6 +2,7 @@ import os
 import random
 import cv2
 import numpy as np
+import pickle 
 
 def count_age_groups(filenames):
     age_counts = {}
@@ -17,8 +18,17 @@ def count_age_groups(filenames):
 def preprocessing(img):
     return img
 
-def augmentation(group_imgs, target_number):
-    pass
+def augmentation(group_imgs, group_filenames,target_number):
+    factor = target_number/len(group_imgs)
+    perc = factor - 1.0
+
+    if perc <= 1.0:
+        
+
+    else:
+        pass
+
+
 
 if __name__ == "__main__":
     path = "dataset/utkface"
@@ -30,6 +40,7 @@ if __name__ == "__main__":
         os.mkdir(path_train)
     except OSError as e:
         pass
+
     n_per_age = 250
     max_augmentation = 5
     
@@ -39,14 +50,16 @@ if __name__ == "__main__":
 
         group_filenames = [x for x in dataset_filenames if int(x.split("_")[0]) == age]
         group_imgs = []
-        new_group_imgs = []
         for filename in group_filenames:
             img = cv2.imread(os.path.join(path,filename))
             img = preprocessing(img)
             group_imgs.append(img)
 
         if n < n_per_age:
-            aug_imgs,aug_filenames = augmentation(group_imgs,n_per_age)
+            target = n_per_age
+            if n_per_age / n > max_augmentation:
+                target = n * max_augmentation
+            aug_imgs,aug_filenames = augmentation(group_imgs,group_filenames,target)
             for i in range(len(group_imgs)):
                 cv2.imwrite(os.path.join(path_train,aug_filenames[i]), aug_imgs[i])
         elif n > n_per_age:
