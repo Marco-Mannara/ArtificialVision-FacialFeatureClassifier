@@ -67,9 +67,7 @@ def _brightness_shift_pass(img):
     img = cv2.cvtColor(final_hsv, cv2.COLOR_HSV2BGR)
     return img
 
-def contrast_shift_pass(img):
-    
-    
+def contrast_shift_pass(img):   
     return img
 '''
 def add_googles_pass():
@@ -83,8 +81,7 @@ def get_aug_processes():
 
 def augmentation(group_imgs, group_filenames,labels,target_number):
     group_size = len(group_imgs)
-    factor = target_number/len(group_imgs)
-    perc = factor - 1.0
+    perc = (target_number/len(group_imgs)) - 1.0
     aug_processes = get_aug_processes()
 
     gen_img = None
@@ -108,9 +105,39 @@ def augmentation(group_imgs, group_filenames,labels,target_number):
 
             c += 1
     else:
-        pass
+        floor_perc = int(np.floor(perc))
+        diff = perc - floor_perc
+        n_diff = diff * group_size
+        replicas = 0
+
+        for i in range(group_size):
+            replicas = floor_perc
+            if i <= n_diff:
+                replicas +=1
+            if replicas >= len(aug_processes):
+                aug_procs = random.choices(aug_processes, k = replicas)
+            else:
+                aug_procs = random.sample(aug_processes, k = replicas)
+            for j in range(replicas):
+                split_filename = group_filenames[i].split(".")
+                split_filename.insert(-1,str(c))
+                gen_filename = '.'.join(split_filename)
+
+                aug_proc = aug_procs[j]
+                #d[gen_filename] = aug_proc.__name__
+                gen_img = aug_proc(group_imgs[i])
+                group_imgs.append(gen_img)
+                group_filenames.append(gen_filename)
+                labels[gen_filename] = labels[group_filenames[i]]
+
+                c += 1
+
+
+   
         
-    
+
+
+        
 
     return group_imgs,group_filenames, labels
 
@@ -133,9 +160,6 @@ if __name__ == "__main__":
         reader = csv.reader(csvfile, delimiter = ",")
         for row in reader:
             label_dict[row[0]] = tuple(row[1:])
-    ret = count_classes(label_dict)
-    print(ret)
-    exit()
 
     try:
         os.mkdir(path_train)
@@ -163,7 +187,6 @@ if __name__ == "__main__":
             aug_imgs, aug_filenames, aug_labels = augmentation(group_imgs,group_filenames, label_dict, target)
             for i in range(len(aug_imgs)):
                 cv2.imwrite(os.path.join(path_train,aug_filenames[i]), aug_imgs[i])
-            break
         elif n > n_per_age:
             random_indexes = random.sample(range(0,n),k=n_per_age)
             for i in random_indexes:
