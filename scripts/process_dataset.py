@@ -77,17 +77,12 @@ def _contrast_shift_pass(img):
     final = cv2.cvtColor(limg, cv2.COLOR_LAB2BGR)
     return final
 
-'''
-def add_googles_pass():
-    pass
-
-def add_beard_pass():
-    pass
-'''
 def get_aug_processes():
     return  [_blur_pass, _noise_pass, _brightness_shift_pass, _contrast_shift_pass]
 
 def augmentation(group_imgs, group_filenames,labels,target_number):
+    if len(group_imgs) == 0: 
+        return group_imgs, group_filenames, labels
     group_size = len(group_imgs)
     perc = (target_number/len(group_imgs)) - 1.0
     aug_processes = get_aug_processes()
@@ -138,7 +133,7 @@ def augmentation(group_imgs, group_filenames,labels,target_number):
                 
                 gen_img = aug_proc(group_imgs[i])
                 group_imgs.append(gen_img)
-                group_filenames.append(gen_filename)
+                group_filenames.append(gen_filename)                
                 labels[gen_filename] = labels[group_filenames[i]]
 
                 c += 1
@@ -149,13 +144,18 @@ if __name__ == "__main__":
     path_dataset = "dataset"
     path_images = os.path.join(path_dataset,"utkface")
     path_train = os.path.join(path_dataset,"train")
+    path_validation = os.path.join(path_dataset, "validation")
     path_labels = os.path.join(path_dataset,"labels.csv")
-    new_path_labels = os.path.join(path_dataset,"train_labels.csv")
 
     dataset_filenames = os.listdir(path_images)
     age_counts = count_age_groups(dataset_filenames)
     
+    #Processing parameters
+    validation_split = 0.15
+    n_per_age = 250
+    max_augmentation = 5
 
+    #Dictionaries for storing samples and labels
     label_dict = {}
     img_dict = {}
 
@@ -164,61 +164,76 @@ if __name__ == "__main__":
         for row in reader:
             label_dict[row[0]] = tuple(row[1:])
 
+    for filename in tqdm(dataset_filenames, desc = "Loading images"):
+        img_dict[filename] = preprocessing(cv2.imread(os.path.join(path_images,filename)))
+
+
     try:
         os.mkdir(path_train)
+        os.mkdir(path_validation)
     except OSError as e:
         pass
 
-    n_per_age = 250
-    max_augmentation = 5
-    
-    dataset = []
-    with open(new_path_labels,"w") as new_label_file:
-        writer = csv.writer(new_label_file)
-        for count in tqdm(age_counts):
-            age,n = count
+    with open(os.path.join(path_dataset, "train_label.csv"),"w", newline = '') as train_label_file:
+        with open(os.path.join(path_dataset, "val_label.csv"), "w", newline = '') as val_label_file:
+            writer = csv.writer(train_label_file)
+            val_writer = csv.writer(val_label_file)    
+          
+            for count in tqdm(age_counts, desc="Processing Dataset"):
+                age,n = count
+                group_filenames = [x for x in dataset_filenames if int(x.split("_")[0]) == age]
 
-            group_filenames = [x for x in dataset_filenames if int(x.split("_")[0]) == age]    
-
-            group_labels = {}
-            for filename in group_filenames:
-                try:
-                    group_labels[filename] = label_dict[filename]
-                except KeyError as e:
-                    print(e)
-
-            group_imgs = []
-            for filename in group_filenames:
-                img = cv2.imread(os.path.join(path_images,filename))
-                img = preprocessing(img)
-                group_imgs.append(img)
-
-            if n < n_per_age:
-                target = n_per_age
-                if n_per_age / n > max_augmentation:
-                    target = n * max_augmentation
-                aug_imgs, aug_filenames, aug_labels = augmentation(group_imgs,group_filenames, group_labels, target)
-                for i in range(len(aug_imgs)):
-                    cv2.imwrite(os.path.join(path_train,aug_filenames[i]), aug_imgs[i])
-                for k,v in aug_labels.items():
-                    writer.writerow([k,v[0],v[1],v[2]])
-            elif n > n_per_age:
-                random_indexes = random.sample(range(0,n),k=n_per_age) 
-                for i in random_indexes:
-                    cv2.imwrite(os.path.join(path_train,group_filenames[i]), group_imgs[i])
-                    try:
-                        label = label_dict[group_filenames[i]]
-                        writer.writerow([group_filenames[i], label[0], label[1], label[2]])
-                    except KeyError as e:
-                        print(e)
+                #Splitting into training and validation
+                validation_filenames = []
                 
-       
+                train_filenames = []
+                train_imgs = []
+                train_labels = {}
 
+                if n > 1:
+                    k =  min(n, n_per_age)
+                    perm_fnames = random.sample(group_filenames, k = k)
+                    split = int(np.ceil(k * validation_split))
+                    validation_filenames = perm_fnames[:split]
+                    train_filenames = perm_fnames[split:]
+                    train_imgs = [img_dict[train_fname] for train_fname in train_filenames]
+                    for train_fname in train_filenames:
+                        try:
+                            train_labels[train_fname] = label_dict[train_fname]
+                        except KeyError:
+                            pass
+                else:
+                    train_filenames.append(group_filenames[0])
+                    train_imgs.append(img_dict[train_filenames[0]])
+                    train_labels[train_filenames[0]] = label_dict[train_filenames[0]]
 
-    
+                #Writing validation set to disk
+                for val_fname in validation_filenames:
+                    label = label_dict[val_fname]
+                    val_writer.writerow([val_fname,label[0],label[1],label[2]])
+                    cv2.imwrite(os.path.join(path_validation, val_fname),img_dict[val_fname])
+                
+                
+                train_size = len(train_filenames)
+                if train_size < 1:
+                    print("There's a problem.")
 
-
-
-
-
-
+                target = n_per_age
+                if n_per_age / train_size > max_augmentation:
+                    target = train_size * max_augmentation
+         
+                if train_size < target:
+                    aug_imgs, aug_filenames, aug_labels = augmentation(train_imgs, train_filenames, train_labels, target)
+                    for i in range(len(aug_imgs)):
+                        cv2.imwrite(os.path.join(path_train,aug_filenames[i]), aug_imgs[i])
+                    for k,v in aug_labels.items():
+                        writer.writerow([k,v[0],v[1],v[2]])
+                elif train_size > target:
+                    random_indexes = random.sample(range(0,n),k=n_per_age) 
+                    for i in random_indexes:
+                        cv2.imwrite(os.path.join(path_train,train_filenames[i]), train_imgs[i])
+                        try:
+                            label = label_dict[train_filenames[i]]
+                            writer.writerow([train_filenames[i], label[0], label[1], label[2]])
+                        except KeyError as e:
+                            pass
