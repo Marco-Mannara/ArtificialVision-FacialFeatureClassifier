@@ -6,9 +6,7 @@ import pandas as pd
 
 NUMBER_OF_GROUPS = 25
 
-
 if __name__ == '__main__':
-
     # Argument parser
     argpars = argparse.ArgumentParser()
 
