@@ -6,7 +6,7 @@ import matplotlib as mlp
 import cv2
 
 from Dataset import Dataset
-from LocalBinaryPatterns import LocalBinaryPatterns
+from LBPDescriptor import LBPDescriptor
 from skimage.feature import local_binary_pattern
 
 
@@ -21,7 +21,7 @@ for k in dset.samples.keys():
     break
 sample = (rand, dset.labels[rand], cv2.cvtColor(dset.samples[rand], cv2.COLOR_BGR2GRAY))
 
-descriptor = LocalBinaryPatterns(num_points,radius,16)
+descriptor = LBPDescriptor(num_points,radius,16)
 
 hist,lbp_img = descriptor.describe(sample[2])
 lbp_img /= 2**num_points

@@ -5,7 +5,8 @@ import cv2
 
 from tqdm import tqdm
 from sklearn.svm import LinearSVC
-from LocalBinaryPatterns import LocalBinaryPatterns
+from LBPDescriptor import LBPDescriptor
+from HOGDescriptor import HOGDescriptor
 
 class FFClassifier:
     def __init__(self, verbose = False):
@@ -50,19 +51,17 @@ class FFClassifier:
     def _prepare_data(self, samples):
         if self.verbose:
             print("Preparing data...")
-        desc = LocalBinaryPatterns(9, 1, 16, 4, 4)
-        #dset_sample_ids = list(dset.samples.keys())
-        #imgs,labels = (np.array([dset.samples[k] for k in dset_sample_ids]),np.array([dset.labels[k] for k in dset_sample_ids]))
+        lbp_desc = LBPDescriptor(9, 1, 16, 4, 4)
+        hog_desc = HOGDescriptor()
         data1,data2,data3 = ([],[],[])
-        #lab1,lab2,lab3 = (labels[:,0],labels[:,1],labels[:,2])
         for img in tqdm(samples, desc="Calculating LBP for images"):
             gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
             up_half,low_half = self._cut_img(gray)
-            hist1,_ = desc.describe(low_half)
+            hist1,_ = lbp_desc.describe(low_half)
             data1.append(hist1)
-            hist2,_ = desc.describe(low_half)
+            hist2,_ = lbp_desc.describe(low_half)
             data2.append(hist2)
-            hist3,_ = desc.describe(up_half)
+            hist3,_ = hog_desc.describe(up_half)
             data3.append(hist3)
 
         return (data1, data2, data3)#, lab1, lab2, lab3)

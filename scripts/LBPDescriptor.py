@@ -1,7 +1,7 @@
 from skimage import feature
 import numpy as np
 
-class LocalBinaryPatterns:
+class LBPDescriptor:
 	def __init__(self, numPoints, radius, num_bins = 256, n_row = 8, n_col = 8):
 		self.numPoints = numPoints
 		self.radius = radius
