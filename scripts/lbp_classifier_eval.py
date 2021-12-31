@@ -1,7 +1,3 @@
-import pickle 
-import os 
-import numpy as np
-
 from Dataset import Dataset
 from FacialFeaturesClassifier import FFClassifier
 

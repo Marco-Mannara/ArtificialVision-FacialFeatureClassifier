@@ -39,7 +39,7 @@ class FFClassifier:
 
     def save(self, path = "trained_models", name = "lbp_model.pickle"):
         with open(os.path.join(path,name), "wb") as file:
-            pickle.dump({"model1":self.model1, "model2":self.model2, "model3":self.model2},file)
+            pickle.dump({"model1":self.model1, "model2":self.model2, "model3":self.model3},file)
 
     def load(self, path = "trained_models", name = "lbp_model.pickle"):
         with open(os.path.join(path,name), "rb") as file:
@@ -52,7 +52,7 @@ class FFClassifier:
         if self.verbose:
             print("Preparing data...")
         lbp_desc = LBPDescriptor(9, 1, 16, 4, 4)
-        hog_desc = HOGDescriptor()
+        hog_desc = HOGDescriptor(8,(32,32),(2,2))
         data1,data2,data3 = ([],[],[])
         for img in tqdm(samples, desc="Calculating LBP for images"):
             gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
@@ -64,7 +64,7 @@ class FFClassifier:
             hist3,_ = hog_desc.describe(up_half)
             data3.append(hist3)
 
-        return (data1, data2, data3)#, lab1, lab2, lab3)
+        return (data1, data2, data3)
     
     def _split_labels(self, labels):
         return (labels[:,0],labels[:,1],labels[:,2])
