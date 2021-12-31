@@ -10,6 +10,7 @@ class Dataset:
     def __init__(self, name, path_to_dataset = "", labels = None, samples = None):
         self.path = path_to_dataset
         self.name = name
+        self.data_shape = None
 
         if labels is not None:
             self.labels = labels
@@ -28,6 +29,10 @@ class Dataset:
 
     def save_h5():
         pass
+
+    def to_lists(self):
+        ids = self.samples.keys()
+        return np.array([self.samples[k] for k in ids]),np.array([self.labels[k] for k in ids])
 
     def augment(self, aug_processes, target):
         n = len(self.samples)
@@ -130,9 +135,10 @@ class Dataset:
         for k,v in other.labels.items():
             self.labels[k] = v
 
-    def load(self, sample_folder, label_file):
-        self._read_from_folder(sample_folder)
+    def load(self, sample_folder, label_file, sample_limit = 0):
+        self._read_from_folder(sample_folder, sample_limit)
         self._read_label_file(label_file)
+        self.data_shape = next(iter(self.samples.values())).shape
 
     def save(self, sample_folder, label_file):
         self._save_to_folder(sample_folder)
@@ -143,12 +149,15 @@ class Dataset:
         for k,v in tqdm(self.samples.items(), desc = "Saving samples of dataset %s" % (self.name)):
             cv2.imwrite(os.path.join(folder_path,k), v)
 
-    def _read_from_folder(self, folder_name):
+    def _read_from_folder(self, folder_name,sample_limit):
         folder_path = os.path.join(self.path, folder_name)
         filenames = os.listdir(folder_path)
-
+        c = 0
         for fname in tqdm(filenames,desc="Loading samples for dataset %s" % (self.name)):
+            if sample_limit > 0 and c >= sample_limit:
+                break
             self.samples[fname] = cv2.imread(os.path.join(folder_path, fname)) 
+            c += 1
 
     def _read_label_file(self, filename):
         print("Reading labels for dataset %s" % (self.name))

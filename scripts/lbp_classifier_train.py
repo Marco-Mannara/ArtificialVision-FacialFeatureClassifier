@@ -1,3 +1,4 @@
+from colorsys import yiq_to_rgb
 import dlib
 import cv2
 import os
@@ -9,6 +10,7 @@ from collections import OrderedDict
 from sklearn.svm import LinearSVC
 
 from Dataset import Dataset
+from FacialFeaturesClassifier import FFClassifier
 from LocalBinaryPatterns import LocalBinaryPatterns
 
 landm_ids_68 = OrderedDict([
@@ -26,17 +28,20 @@ def prepare_data(dset):
 	desc = LocalBinaryPatterns(12, 5)
 	dset_sample_ids = list(dset.labels.keys())
 	data = []
+	gray_imgs = np.zeros(shape = (len(dset_sample_ids), dset.data_shape[0],dset.data_shape[1]), dtype='uint8')
 	imgs,labels = (np.array([dset.samples[k] for k in dset_sample_ids]),np.array([dset.labels[k] for k in dset_sample_ids]))
 	class1_labels = labels[:,0]
 	class2_labels = labels[:,1]
 	class3_labels = labels[:,2]
-
+	i = 0
 	for img in tqdm(imgs, desc="Calculating LBP %s dataset images" % (dset.name)):
 		gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+		gray_imgs[i][...] = gray[...]
 		hist = desc.describe(gray)
 		data.append(hist)
+		i+=1
 
-	return (data, class1_labels, class2_labels, class3_labels)
+	return (data, class1_labels, class2_labels, class3_labels, gray_imgs)
 
 
 if __name__ == "__main__":
@@ -49,8 +54,15 @@ if __name__ == "__main__":
 		os.mkdir("trained_models")
 	except OSError:
 		pass
+	
+	classifier = LBPClassifier(verbose=True)
+	X,y = train_dset.to_lists()
+	classifier.fit(X,y)
+	classifier.save()
 
-	train_data, c1_train_labels, c2_train_labels, c3_train_labels = prepare_data(train_dset)
+
+	'''
+	train_data, c1_train_labels, c2_train_labels, c3_train_labels,gray_imgs = prepare_data(train_dset)
 
 	print("Training first classifier.")
 	model1 = LinearSVC(C=1.0, random_state=42)
@@ -63,4 +75,4 @@ if __name__ == "__main__":
 	model3.fit(train_data, c3_train_labels)
 
 	with open(os.path.join("trained_models","lbp_model.pickle"), "wb") as file:
-		pickle.dump({"model1":model1, "model2":model2, "model3":model3}, file)
+		pickle.dump({"model1":model1, "model2":model2, "model3":model3}, file)'''
