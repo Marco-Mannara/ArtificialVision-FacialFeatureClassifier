@@ -27,6 +27,6 @@ if __name__ == "__main__":
 		pass
 	
 	classifier = FFClassifier(verbose=True)
-	X,y = train_dset.to_lists()
+	X,y,_ = train_dset.to_lists()
 	classifier.fit(X,y)
 	classifier.save()

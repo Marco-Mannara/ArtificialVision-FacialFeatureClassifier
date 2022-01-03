@@ -9,7 +9,6 @@ def init_parameter():
     args = parser.parse_args()
     return args
 
-
 args = init_parameter()
 # Lettura file CSV come dizionari (chiave path e beard, moustache e glasses valore)
 # Groundtruth

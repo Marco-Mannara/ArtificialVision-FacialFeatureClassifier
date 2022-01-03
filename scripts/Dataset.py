@@ -20,8 +20,9 @@ class Dataset:
             self.samples = samples
         else:
             self.samples = {}
-    
-    def size(self):
+
+
+    def __len__(self):
         return len(self.labels)
 
     def load_h5():
@@ -32,7 +33,7 @@ class Dataset:
 
     def to_lists(self):
         ids = self.samples.keys()
-        return np.array([self.samples[k] for k in ids]),np.array([self.labels[k] for k in ids])
+        return np.array([self.samples[k] for k in ids]),np.array([self.labels[k] for k in ids]),ids
 
     def augment(self, aug_processes, target):
         n = len(self.samples)
@@ -99,7 +100,7 @@ class Dataset:
         if len(perc) != len(names):
             return
 
-        n = len(self.samples)
+        n = len(self)
 
         if n <= 1 or n < len(perc):
             return 
@@ -123,10 +124,24 @@ class Dataset:
         if len(cuts) != len(names):
             return
 
-        n = self.size()
+        n = len(self)
 
         if n <= 1 or n < len(cuts):
             return
+
+        splits = zip(cuts,names)
+        fnames = list(self.labels.keys())
+        perm_fnames = random.sample(fnames, k = n)
+        split_datasets = []
+        start = 0
+        for c,name in splits:
+            split_fnames = perm_fnames[start:start+c]
+            split_samples = {k : self.samples[k] for k in split_fnames}
+            split_labels = {k : self.labels[k] for k in split_fnames}
+            split_datasets.append(Dataset(name,path_to_dataset=self.path,samples=split_samples, labels=split_labels))
+            start += c
+        return split_datasets
+
 
     def merge(self, other):
         for k,v in other.samples.items():
