@@ -7,6 +7,8 @@ import dlib
 from collections import OrderedDict
 from tqdm import tqdm
 from sklearn.svm import LinearSVC
+from sklearn.ensemble import AdaBoostClassifier
+from sklearn.tree import DecisionTreeClassifier
 from LBPDescriptor import LBPDescriptor
 from HOGDescriptor import HOGDescriptor
 
@@ -74,9 +76,14 @@ def _split_labels(labels):
 
 class FFClassifier:
     def __init__(self, verbose = False):
+        self.model1 = AdaBoostClassifier(base_estimator=DecisionTreeClassifier(max_depth=2), n_estimators=200)
+        self.model2 = AdaBoostClassifier(base_estimator=DecisionTreeClassifier(max_depth=2), n_estimators=400)
+        self.model3 = AdaBoostClassifier(base_estimator=DecisionTreeClassifier(max_depth=2), n_estimators=200)
+        '''
         self.model1 = LinearSVC(C=10.0, random_state=41, max_iter=1000000)
         self.model2 = LinearSVC(C=10.0, random_state=42, max_iter=1000000)
         self.model3 = LinearSVC(C=10.0, random_state=43, max_iter=1000000)
+        '''
         self.verbose = verbose
 
     def predict(self,samples):
@@ -115,21 +122,29 @@ class FFClassifier:
     def _prepare_data(self, samples):
         if self.verbose:
             print("Preparing data...")
-        lbp_desc = LBPDescriptor(9, 1, 16, 4, 4)
-        hog_desc = HOGDescriptor(8,(32,32),(2,2))
+        lbp_desc = LBPDescriptor(6, 1, 24, 4, 4)
+        #lbp_desc2 = LBPDescriptor(9, 1, 16, 4, 4)
+        #hog_desc = HOGDescriptor(8,(32,32),(2,2))
+        #hog_desc2 = HOGDescriptor(8,(16,16),(3,3))
         data1,data2,data3 = ([],[],[])
 
         for img in tqdm(samples, desc="Calculating LBP for images"):
             gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
-            up,mid,low = _cut_img(gray)
-            hist1,_ = lbp_desc.describe(up)
+            up_half,low_half, mid = self._cut_img(gray)
+            hist1,_ = lbp_desc.describe(low_half)
             data1.append(hist1)
             hist2,_ = lbp_desc.describe(mid)
             data2.append(hist2)
-            hist3,_ = hog_desc.describe(low)
+            hist3,_ = lbp_desc.describe(up_half)
             data3.append(hist3)
         return (data1, data2, data3)
     
 
-
+    def _cut_img(self, img):
+        cut = int(img.shape[0] / 2)
+        cut1 = img.shape[0] // 5
+        up = img[:cut]
+        mid = img[cut: cut + cut1]
+        low = img[cut:]
+        return up,low,mid
 
