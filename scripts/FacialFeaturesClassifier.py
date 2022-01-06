@@ -42,6 +42,14 @@ def _shape_to_np(shape, dtype="int"):
     return coords
 
 def _cut_img(img):
+    cut = int(img.shape[0] / 2)
+    cut1 = img.shape[0] // 5
+    up = img[:cut]
+    mid = img[cut: cut + cut1]
+    low = img[cut:]
+    return up,low,mid
+'''
+def _cut_img(img):
     face_boxes = detector(img,1)
     landms = None
     c = 0
@@ -70,7 +78,7 @@ def _cut_img(img):
         low = img[cut1:]
         
     return up,mid,low
-
+'''
 def _split_labels(labels):
     return (labels[:,0],labels[:,1],labels[:,2])
 
@@ -79,11 +87,6 @@ class FFClassifier:
         self.model1 = AdaBoostClassifier(base_estimator=DecisionTreeClassifier(max_depth=2), n_estimators=200)
         self.model2 = AdaBoostClassifier(base_estimator=DecisionTreeClassifier(max_depth=2), n_estimators=400)
         self.model3 = AdaBoostClassifier(base_estimator=DecisionTreeClassifier(max_depth=2), n_estimators=200)
-        '''
-        self.model1 = LinearSVC(C=10.0, random_state=41, max_iter=1000000)
-        self.model2 = LinearSVC(C=10.0, random_state=42, max_iter=1000000)
-        self.model3 = LinearSVC(C=10.0, random_state=43, max_iter=1000000)
-        '''
         self.verbose = verbose
 
     def predict(self,samples):
@@ -123,14 +126,13 @@ class FFClassifier:
         if self.verbose:
             print("Preparing data...")
         lbp_desc = LBPDescriptor(6, 1, 24, 4, 4)
-        #lbp_desc2 = LBPDescriptor(9, 1, 16, 4, 4)
         #hog_desc = HOGDescriptor(8,(32,32),(2,2))
-        #hog_desc2 = HOGDescriptor(8,(16,16),(3,3))
         data1,data2,data3 = ([],[],[])
 
         for img in tqdm(samples, desc="Calculating LBP for images"):
             gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
-            up_half,low_half, mid = self._cut_img(gray)
+            gray = cv2.equalizeHist(gray)
+            up_half,low_half, mid = _cut_img(gray)
             hist1,_ = lbp_desc.describe(low_half)
             data1.append(hist1)
             hist2,_ = lbp_desc.describe(mid)
@@ -140,11 +142,5 @@ class FFClassifier:
         return (data1, data2, data3)
     
 
-    def _cut_img(self, img):
-        cut = int(img.shape[0] / 2)
-        cut1 = img.shape[0] // 5
-        up = img[:cut]
-        mid = img[cut: cut + cut1]
-        low = img[cut:]
-        return up,low,mid
+
 

@@ -2,3 +2,4 @@
 /dataset
 /venv
 /trained_models/mispred
+trained_models/pred_labels.csv

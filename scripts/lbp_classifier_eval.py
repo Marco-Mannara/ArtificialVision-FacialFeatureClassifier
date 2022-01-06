@@ -7,11 +7,14 @@ from FacialFeaturesClassifier import FFClassifier
 from sklearn.metrics import accuracy_score,balanced_accuracy_score,multilabel_confusion_matrix
 
 if __name__ == "__main__":
+    MODEL_NAME = "ffc_model.pickle"
+
+
     eval_dset = Dataset("evaluation", "dataset")
     eval_dset.load("validation", "val_label.csv")
 
     classifier = FFClassifier()
-    classifier.load()
+    classifier.load(name = MODEL_NAME)
     X,y_t,fnames = eval_dset.to_lists()
     y_p = classifier.predict(X)
 
