@@ -33,7 +33,7 @@ class Dataset:
 
     def to_lists(self):
         ids = self.samples.keys()
-        return np.array([self.samples[k] for k in ids]),np.array([self.labels[k] for k in ids]),ids
+        return [self.samples[k] for k in ids],np.array([self.labels[k] for k in ids], dtype='int32'),ids
 
     def augment(self, aug_processes, target):
         n = len(self.samples)

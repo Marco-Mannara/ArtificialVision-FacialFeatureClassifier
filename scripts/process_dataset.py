@@ -99,10 +99,10 @@ def _translation_pass(img):
 
 def _horizontal_flip_pass(img):
     return cv2.flip(img,1)
-
+'''
 def _vertical_flip_pass(img):
     return cv2.flip(img,0)
-
+'''
 def get_aug_processes():
     return  [
     _blur_pass,
@@ -111,8 +111,7 @@ def get_aug_processes():
     _contrast_shift_pass,
     _rotate_pass,
     _translation_pass,
-    _horizontal_flip_pass,
-    _vertical_flip_pass
+    _horizontal_flip_pass
     ]
 
 def split_by_labels(dset):

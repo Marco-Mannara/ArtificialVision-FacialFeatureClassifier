@@ -7,11 +7,11 @@ from FacialFeaturesClassifier import FFClassifier
 from sklearn.metrics import accuracy_score,multilabel_confusion_matrix
 
 if __name__ == "__main__":
-    MODEL_NAME = "ffc_model.pickle"
+    MODEL_NAME = "ffc_model_noalign.pickle"
 
 
     eval_dset = Dataset("evaluation", "dataset")
-    eval_dset.load("validation", "val_label.csv")
+    eval_dset.load("validation3", "val_label3.csv")
 
     classifier = FFClassifier()
     classifier.load(name = MODEL_NAME)

@@ -23,9 +23,11 @@ def _split_labels(labels):
     return (labels[:,0],labels[:,1],labels[:,2])
 
 def _preprocessing(img):
-    _,aligned_gray,align_succ = face_aligner.align(img)
-    gray = cv2.equalizeHist(aligned_gray)
-    return gray,align_succ
+    #_,aligned_gray,align_succ = face_aligner.align(img)
+    img = cv2.resize(img,(200,200))
+    gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+    gray = cv2.equalizeHist(gray)
+    return gray,True
 
 class FFClassifier:
     def __init__(self, verbose = False):
@@ -41,7 +43,7 @@ class FFClassifier:
         pred2 = self.model2.predict(d2)
         pred3 = self.model3.predict(d3)
 
-        return [[pred1[i],pred2[i],pred3[i]] for i in range(len(pred1))]
+        return np.array([[pred1[i],pred2[i],pred3[i]] for i in range(len(pred1))], dtype='int32')
 
     def fit(self, samples, labels):
         d1,d2,d3 = self._prepare_data(samples)
@@ -74,14 +76,17 @@ class FFClassifier:
         data1,data2,data3 = ([],[],[])
 
         for img in tqdm(samples, desc="Calculating features for images"):
-            img,_ = _preprocessing(img)
-            up_half,low_half, mid = _cut_img(img)
+            gray,_ = _preprocessing(img)
+            up_half,low_half, mid = _cut_img(gray)
             hist1,_ = lbp_desc.describe(low_half)
-            data1.append(hist1)
+            #hist1,_ = lbp_desc.describe(gray)
+            data1.append(hist1)                       
             hist2,_ = lbp_desc.describe(mid)
             data2.append(hist2)
             hist3,_ = lbp_desc.describe(up_half)
             data3.append(hist3)
+            
+            
         return (data1, data2, data3)
     
 
