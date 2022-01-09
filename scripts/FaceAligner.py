@@ -3,7 +3,6 @@ import cv2
 import dlib
 
 import numpy as np
-
 from collections import OrderedDict
 
 '''
@@ -27,27 +26,16 @@ FACIAL_LANDMARKS_5_IDXS = OrderedDict([
 ])
 
 def shape_to_np(shape, dtype="int"):
-    # initialize the list of (x, y)-coordinates
     coords = np.zeros((shape.num_parts, 2), dtype=dtype)
 
-    # loop over all facial landmarks and convert them
-    # to a 2-tuple of (x, y)-coordinates
     for i in range(0, shape.num_parts):
         coords[i] = (shape.part(i).x, shape.part(i).y)
-
-    # return the list of (x, y)-coordinates
     return coords
 
 
 class FaceAligner:
     def __init__(self,  desiredLeftEye=(0.35, 0.35),
                  desiredFaceWidth=256, desiredFaceHeight=None):
-        # store the facial landmark predictor, desired output left
-        # eye position, and desired output face width + height
-        #net = cv2.dnn.readNetFromDarknet(cfg_path, weight_path)
-        #self.detector = cv2.dnn_DetectionModel(net)
-        #self.detector.setInputParams(scale=1 / 255, size=(416, 416), swapRB=True)
-        #self.detector = dlib.cnn_face_detection_model_v1(os.path.join('trained_models', 'mmod_human_face_detector.dat'))
         self.detector = dlib.get_frontal_face_detector()
         self.predictor = dlib.shape_predictor( os.path.join('trained_models','shape_predictor_5_face_landmarks.dat'))
         self.desiredLeftEye = desiredLeftEye
@@ -64,16 +52,6 @@ class FaceAligner:
         faces = self.detector(gray,1)
         faces = [f for f in faces]
 
-        #rect = None 
-        #classIds, scores, boxes = self.detector.detect(img, confThreshold=0.6, nmsThreshold=0.4)
-        #detection_data = zip(classIds,scores, boxes)
-        #data_person = [(id,sc,box) for id,sc,box in detection_data if id == 0]
-        
-        #if len(data_person) > 0:        
-        #    box = data_person[0][2]
-        #    rect = dlib.rectangle(left = box[0], right = box[2], top = box[1], bottom = box[3])
-
-       
         if len(faces) > 0:
             # convert the landmark (x, y)-coordinates to a NumPy array
             rect = faces[0]
