@@ -6,6 +6,7 @@ from FacialFeaturesClassifier import FFClassifier
 from sklearn.metrics import accuracy_score, multilabel_confusion_matrix
 
 if __name__ == "__main__":
+	MODEL_NAME = "ffc_model_nocuts_nogrid.pickle"
 	path_dataset = "dataset"
 	train_dset = Dataset("train", path_dataset)  
 
@@ -19,7 +20,7 @@ if __name__ == "__main__":
 	classifier = FFClassifier(verbose=True)
 	X,y,_ = train_dset.to_lists()
 	classifier.fit(X,y)
-	classifier.save()
+	classifier.save(name = MODEL_NAME)
 
 	y_pred = classifier.predict(X)
 	accuracy = accuracy_score(y,y_pred)

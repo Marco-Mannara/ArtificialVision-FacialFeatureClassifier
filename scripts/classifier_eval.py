@@ -7,7 +7,7 @@ from FacialFeaturesClassifier import FFClassifier
 from sklearn.metrics import accuracy_score,multilabel_confusion_matrix
 
 if __name__ == "__main__":
-    MODEL_NAME = "ffc_model.pickle"
+    MODEL_NAME = "ffc_model_nocuts_nogrid.pickle"
 
 
     eval_dset = Dataset("evaluation", "dataset")

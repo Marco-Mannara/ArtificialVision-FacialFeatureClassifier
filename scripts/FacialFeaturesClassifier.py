@@ -41,7 +41,7 @@ class FFClassifier:
         pred2 = self.model2.predict(d2)
         pred3 = self.model3.predict(d3)
 
-        return [[pred1[i],pred2[i],pred3[i]] for i in range(len(pred1))]
+        return np.array([[pred1[i],pred2[i],pred3[i]] for i in range(len(pred1))], dtype='int32')
 
     def fit(self, samples, labels):
         d1,d2,d3 = self._prepare_data(samples)
@@ -70,19 +70,21 @@ class FFClassifier:
     def _prepare_data(self, samples):
         if self.verbose:
             print("Preparing data...")
-        lbp_desc = LBPDescriptor(6, 1, 24, 4, 4)
+        lbp_desc = LBPDescriptor(6, 1, 24, 1, 1)
         data1,data2,data3 = ([],[],[])
 
         for img in tqdm(samples, desc="Calculating features for images"):
-            img,_ = _preprocessing(img)
-            up_half,low_half, mid = _cut_img(img)
-            hist1,_ = lbp_desc.describe(low_half)
+            gray,_ = _preprocessing(img)
+            #up_half,low_half, mid = _cut_img(img)
+            hist1,_ = lbp_desc.describe(gray)
             data1.append(hist1)
+            '''
             hist2,_ = lbp_desc.describe(mid)
             data2.append(hist2)
             hist3,_ = lbp_desc.describe(up_half)
             data3.append(hist3)
-        return (data1, data2, data3)
+            '''
+        return (data1, data1, data1)
     
 
 

@@ -108,5 +108,8 @@ class FaceAligner:
             # return the aligned face
             return output,gray_output,True
         else:
+            img = cv2.resize(img, (200,200))
+            gray = cv2.resize(gray, (200,200))
+
             return img,gray,False
 
