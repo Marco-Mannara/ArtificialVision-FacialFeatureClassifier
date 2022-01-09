@@ -6,7 +6,7 @@ import numpy as np
 from tqdm import tqdm
 
 if __name__ == "__main__":
-    suffix = "1"
+    suffix = "2"
     train_path = os.path.join("dataset", "train" + suffix)
     val_path = os.path.join("dataset", "validation" + suffix)
     trainl_path = os.path.join("dataset", "train_label" + suffix + ".csv")

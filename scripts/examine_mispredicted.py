@@ -4,12 +4,19 @@ import cv2
 
 from tqdm import tqdm
 from Dataset import Dataset
+from argparse import ArgumentParser
+
+
+
+
 
 y_pred = {}
-yp_path = os.path.join("trained_models", "pred_labels.csv")
+y_true = {}
 
-val_dset = Dataset("validation","dataset")
-val_dset.load("validation","val_label.csv")
+with open(yp_path,"r", newline='') as file:
+    reader = csv.reader(file)
+    for row in reader:
+        y_pred[row[0]] = [int(row[1]),int(row[2]),int(row[3])]
 
 with open(yp_path,"r", newline='') as file:
     reader = csv.reader(file)

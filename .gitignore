@@ -3,3 +3,5 @@
 /venv
 /trained_models/mispred
 trained_models/pred_labels.csv
+trained_models/yolov4.cfg
+trained_models/yolov4.weights

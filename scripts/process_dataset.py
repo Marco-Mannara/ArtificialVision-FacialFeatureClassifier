@@ -97,8 +97,23 @@ def _translation_pass(img):
     ], dtype="float32")
     return cv2.warpAffine(img,translation_matrix, img.shape[:2])
 
+def _horizontal_flip_pass(img):
+    return cv2.flip(img,1)
+
+def _vertical_flip_pass(img):
+    return cv2.flip(img,0)
+
 def get_aug_processes():
-    return  [_blur_pass, _noise_pass, _brightness_shift_pass, _contrast_shift_pass, _rotate_pass, _translation_pass]
+    return  [
+    _blur_pass,
+    _noise_pass,
+    _brightness_shift_pass,
+    _contrast_shift_pass,
+    _rotate_pass,
+    _translation_pass,
+    _horizontal_flip_pass,
+    _vertical_flip_pass
+    ]
 
 def split_by_labels(dset):
     class_dsets = []
@@ -122,7 +137,7 @@ def split_by_labels(dset):
 if __name__ == "__main__":
     path_dataset = "dataset"
     
-    training_n = 1000
+    training_n = 2000
     validation_n = 50
 
     full_dset = Dataset("full", path_dataset)
@@ -134,16 +149,12 @@ if __name__ == "__main__":
 
     for d in tqdm(class_dsets):
         size = len(d)
-        if d.name == "noclass":
-            d.reduce(training_n * 3 + validation_n * 3)
-            train,val = d.split_cuts([training_n * 3,validation_n * 3], ["train", "validation"])
+        if size > training_n + validation_n:
+            d.reduce(training_n + validation_n)
+            train,val = d.split_cuts([training_n,validation_n], ["train", "validation"])
         else:
-            if size > training_n + validation_n:
-                d.reduce(training_n + validation_n)
-                train,val = d.split_cuts([training_n,validation_n], ["train", "validation"])
-            else:
-                train,val = d.split_cuts([len(d) - validation_n,validation_n], ["train", "validation"])
-                train.augment(get_aug_processes(),training_n)                
+            train,val = d.split_cuts([len(d) - validation_n,validation_n], ["train", "validation"])
+            train.augment(get_aug_processes(),training_n)                
         train_dset.merge(train)
         val_dset.merge(val)
             
@@ -167,9 +178,9 @@ if __name__ == "__main__":
         if os.path.exists(os.path.join(path_dataset,vl)):
             continue
   
-        os.mkdir(os.path.join(path_dataset,train_folder))
-        os.mkdir(os.path.join(path_dataset,validation_folder))
+        os.mkdir(os.path.join(path_dataset,tf))
+        os.mkdir(os.path.join(path_dataset,vf))
 
-        train_dset.save(train_folder, trainl_name)
-        val_dset.save(validation_folder, vall_name)
+        train_dset.save(tf, tl)
+        val_dset.save(vf, vl)
         break

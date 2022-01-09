@@ -2,44 +2,14 @@ import pickle
 import os
 import numpy as np
 import cv2
-import dlib
 
-from collections import OrderedDict
 from tqdm import tqdm
-from sklearn.svm import LinearSVC
 from sklearn.ensemble import AdaBoostClassifier
 from sklearn.tree import DecisionTreeClassifier
 from LBPDescriptor import LBPDescriptor
-from HOGDescriptor import HOGDescriptor
+from FaceAligner import FaceAligner
 
-landm_ids_68 = OrderedDict([
-("mouth", (48, 68)),
-("inner_mouth", (60, 68)),
-("right_eyebrow", (17, 22)),
-("left_eyebrow", (22, 27)),
-("right_eye", (36, 42)),
-("left_eye", (42, 48)),
-("nose", (27, 36)),
-("jaw", (0, 17))
-])
-
-detector = dlib.get_frontal_face_detector()
-predictor_68_landm = dlib.shape_predictor( os.path.join('trained_models','shape_predictor_68_face_landmarks.dat'))
-    
-def _get_feature_landmarks(landms, name):
-    si,ei = landm_ids_68[name]
-    f_landm = np.array(landms[si:ei])
-    return f_landm
-
-def _check_empty(slice):
-    return slice.shape[0] <= 0 or slice.shape[1] <= 0
-    
-
-def _shape_to_np(shape, dtype="int"):
-    coords = np.zeros((shape.num_parts, 2), dtype=dtype)
-    for i in range(0, shape.num_parts):
-        coords[i] = (shape.part(i).x, shape.part(i).y)
-    return coords
+face_aligner = FaceAligner(desiredLeftEye=(0.37,0.28),desiredFaceWidth=200)
 
 def _cut_img(img):
     cut = int(img.shape[0] / 2)
@@ -48,39 +18,14 @@ def _cut_img(img):
     mid = img[cut: cut + cut1]
     low = img[cut:]
     return up,low,mid
-'''
-def _cut_img(img):
-    face_boxes = detector(img,1)
-    landms = None
-    c = 0
-    for face in face_boxes:
-        c+=1
-        landms = _shape_to_np(predictor_68_landm(img,face))
-        break
-    cut = img.shape[0] // 2
-    cut1 = cut + (cut // 2)
-    if c == 0:
-        up = img[:cut]
-        mid = img[cut:cut1]
-        low = img[cut1:]
-    else:
-        mouth_landm = _get_feature_landmarks(landms, "mouth")
-        nose_landm = _get_feature_landmarks(landms, "nose")
-        _,maxy_n = np.max(nose_landm,axis=0)
-        _,miny_m = np.min(mouth_landm, axis=0)
-        up = img[:maxy_n]
-        mid = img[maxy_n:miny_m]
-        low = img[miny_m:]
 
-    if _check_empty(up) or _check_empty(mid) or _check_empty(low):
-        up = img[:cut]
-        mid = img[cut:cut1]
-        low = img[cut1:]
-        
-    return up,mid,low
-'''
 def _split_labels(labels):
     return (labels[:,0],labels[:,1],labels[:,2])
+
+def _preprocessing(img):
+    _,aligned_gray,align_succ = face_aligner.align(img)
+    gray = cv2.equalizeHist(aligned_gray)
+    return gray,align_succ
 
 class FFClassifier:
     def __init__(self, verbose = False):
@@ -126,13 +71,11 @@ class FFClassifier:
         if self.verbose:
             print("Preparing data...")
         lbp_desc = LBPDescriptor(6, 1, 24, 4, 4)
-        #hog_desc = HOGDescriptor(8,(32,32),(2,2))
         data1,data2,data3 = ([],[],[])
 
-        for img in tqdm(samples, desc="Calculating LBP for images"):
-            gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
-            gray = cv2.equalizeHist(gray)
-            up_half,low_half, mid = _cut_img(gray)
+        for img in tqdm(samples, desc="Calculating features for images"):
+            img,_ = _preprocessing(img)
+            up_half,low_half, mid = _cut_img(img)
             hist1,_ = lbp_desc.describe(low_half)
             data1.append(hist1)
             hist2,_ = lbp_desc.describe(mid)
